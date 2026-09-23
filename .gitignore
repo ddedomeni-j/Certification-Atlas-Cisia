@@ -1,0 +1,92 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# =========================
+# Environnements virtuels
+# =========================
+.venv/
+venv/
+env/
+ENV/
+
+# =========================
+# VS Code
+# =========================
+.vscode/
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
+# =========================
+# Tests
+# =========================
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# =========================
+# Mypy / Ruff / Lint
+# =========================
+.mypy_cache/
+.ruff_cache/
+
+# =========================
+# MLflow
+# =========================
+mlruns/
+mlartifacts/
+
+# =========================
+# Streamlit
+# =========================
+.streamlit/secrets.toml
+
+# =========================
+# Secrets & configuration
+# =========================
+.env
+.env.*
+*.pem
+*.key
+*.crt
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Modèles entraînés
+# =========================
+models/
+artifacts/
+checkpoints/
+
+# =========================
+# Exports
+# =========================
+*.pkl
+*.joblib
+*.onnx
+*.h5
+
+# =========================
+# Powershell / Batch temporaires
+# =========================
+*.tmp
+*.bak
