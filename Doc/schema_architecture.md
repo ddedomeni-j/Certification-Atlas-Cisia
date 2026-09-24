@@ -1,9 +1,8 @@
-```mermaid
 flowchart TD
     C[Conseiller]
 
     subgraph BACK["Backend métier"]
-        direction TD
+        direction TB
         B[API métier]
         DB[(Base</br>historique inférences<br/> + feedbacks)]
         B -->|Journalise prédiction| DB
@@ -12,7 +11,7 @@ flowchart TD
     end
 
     subgraph SERVICE["Service de prédiction"]
-        direction TD
+        direction TB
         M["API<br/>modèle S5 LightGBM"]
         A[(Artefact modèle actif)]
         A -->|Charge| M
@@ -50,4 +49,3 @@ flowchart TD
 
     DB -->|Données pseudonymisées| E
     P -->|Version validée| A
-```
