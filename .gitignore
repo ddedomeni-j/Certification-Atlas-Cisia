@@ -93,3 +93,12 @@ checkpoints/
 # =========================
 *.tmp
 *.bak
+
+# Base MLflow locale
+mlflow.db
+
+# Rapports générés
+Reports/
+
+# Workspaces VS Code
+*.code-workspace
