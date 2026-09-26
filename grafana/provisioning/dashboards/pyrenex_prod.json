@@ -1,0 +1,85 @@
+{
+  "uid": "pyrenex-prod", "title": "Pyrenex Prod", "schemaVersion": 39,
+  "panels": [{
+    "type": "timeseries", "title": "Vitesse — p95",
+    "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+    "datasource": {"type": "prometheus", "uid": "prometheus"},
+    "targets": [{
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"model\"}[1m])) by (le))",
+      "legendFormat": "p95"
+    }]
+  },
+
+  {
+    "type": "stat",
+    "title": "Vie — services up/down",
+    "gridPos": { "h": 4, "w": 12, "x": 0, "y": 0 },
+    "datasource": { "type": "prometheus", "uid": "prometheus" },
+    "targets": [
+      {
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "up{job=~\"model|backend\"}",
+        "legendFormat": "{{job}}"
+      },
+      {
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "sum(rate(http_requests_total{job=\"model\"}[1m]))",
+        "legendFormat": "RPS model"
+      }
+    ],
+    "fieldConfig": {
+      "defaults": {
+        "mappings": [
+          { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } },
+          { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } }
+        ],
+        "thresholds": {
+          "mode": "absolute",
+          "steps": [
+            { "value": null, "color": "red" },
+            { "value": 1, "color": "green" }
+          ]
+        }
+      }
+    },
+    "options": {
+      "reduceOptions": { "calcs": ["lastNotNull"] },
+      "textMode": "value_and_name"
+    }
+  },
+
+  {
+    "type": "timeseries",
+    "title": "Comportement - repartition des predictions",
+    "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+    "datasource": { "type": "prometheus", "uid": "prometheus" },
+    "targets": [
+      {
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "sum(rate(pyrenex_predictions_total[5m])) by (predicted_class)",
+        "legendFormat": "classe {{predicted_class}}"
+      }
+    ]
+  },
+
+  {
+    "type": "timeseries",
+    "title": "Erreurs HTTP par code",
+    "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+    "datasource": { "type": "prometheus", "uid": "prometheus" },
+    "targets": [
+      {
+        "datasource": { "type": "prometheus", "uid": "prometheus" },
+        "expr": "sum(rate(http_requests_total{job=~\"model|backend\", status=~\"4..|5..\"}[5m])) by (job, status) or vector(0)",
+        "legendFormat": "{{job}} - HTTP {{status}}"
+      }
+    ],
+    "fieldConfig": {
+      "defaults": {
+        "unit": "reqps"
+      }
+    }
+  }]
+}
+
