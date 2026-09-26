@@ -15,3 +15,7 @@ mlflow==3.16.1
 fastapi==0.121.2
 uvicorn[standard]
 loguru==0.7.3
+requests==2.34.2
+streamlit==1.64.0
+prometheus-client==0.26.0
+prometheus-fastapi-instrumentator==7.1.0
