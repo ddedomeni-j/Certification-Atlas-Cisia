@@ -54,3 +54,5 @@ CRITICAL_ERROR_RATE_TOLERANCE = 0.01
 
 MLFLOW_TRACKING_URI = f"sqlite:///{PROJECT_ROOT / 'mlflow.db'}"
 MLFLOW_EXPERIMENT_NAME = "atlas-cisia-s5"
+
+BACKEND_DB_PATH = DATA_DIR / "backend_metier.db"

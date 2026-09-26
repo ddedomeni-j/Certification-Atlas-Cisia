@@ -22,6 +22,9 @@ from services.model_api.app.schemas import (
     PredictionResponse,
 )
 
+from prometheus_fastapi_instrumentator import Instrumentator
+
+from services.model_api.app.metrics import observe_prediction
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -53,6 +56,9 @@ app = FastAPI(
 
 app.add_middleware(LoggingMiddleware)
 
+Instrumentator(should_group_status_codes=False).instrument(app).expose(app,
+                                                                       endpoint="/metrics",
+                                                                       include_in_schema=False)
 
 @app.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
@@ -94,12 +100,13 @@ async def predict(
     try:
         features = pd.DataFrame([application.model_dump()])
         prediction = int(model.predict(features)[0])
+        
+        observe_prediction(prediction)
+
         raw_probabilities = model.predict_proba(features)[0]
 
-        probabilities = {
-            int(class_label): round(float(probability), 4)
-            for class_label, probability in zip(model.classes_, raw_probabilities)
-        }
+        probabilities = {int(class_label): round(float(probability), 4)
+                         for class_label, probability in zip(model.classes_, raw_probabilities)}
     except Exception as error:
         logger.bind(request_id=request_id).exception("Échec de prédiction")
         raise HTTPException(
