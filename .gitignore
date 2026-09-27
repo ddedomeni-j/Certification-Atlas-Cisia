@@ -94,8 +94,8 @@ checkpoints/
 *.tmp
 *.bak
 
-# Base MLflow locale
-mlflow.db
+# Data base
+*.db
 
 # Rapports générés
 Reports/
