@@ -3,9 +3,9 @@ name: CI
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
-    branches: [main]
+    branches: [master]
 
 jobs:
   tests:
@@ -20,6 +20,11 @@ jobs:
 
       - name: Installer les dépendances
         run: pip install -r requirements.txt
+
+      - name: Créer l'artefact du modèle actif
+        run: |
+          MODEL_VERSION=$(python -c "import json; print(json.load(open('Models/active_model.json'))['active_version'])")
+          python Scripts/train_and_persist.py --version "$MODEL_VERSION"
 
       - name: Exécuter les tests
         run: pytest -v
@@ -36,7 +41,7 @@ jobs:
 
   publish:
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
 
     permissions:
