@@ -1,0 +1,46 @@
+services:
+  model-api:
+    image: ghcr.io/ddedomeni-j/certification-atlas-cisia/model-api:sha-71bb49c150317d16c689b0c38c74fd3e22ad3887
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./Models:/app/Models:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  backend-metier-api:
+    image: ghcr.io/ddedomeni-j/certification-atlas-cisia/backend-metier-api:sha-71bb49c150317d16c689b0c38c74fd3e22ad3887
+    ports:
+      - "8001:8001"
+    environment:
+      MODEL_API_URL: http://model-api:8000
+    volumes:
+      - ./Data:/app/Data
+    depends_on:
+      model-api:
+        condition: service_healthy
+
+  retraining-api:
+    image: ghcr.io/ddedomeni-j/certification-atlas-cisia/retraining-api:sha-71bb49c150317d16c689b0c38c74fd3e22ad3887
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./Data:/app/Data
+      - ./Models:/app/Models
+      - ./Reports:/app/Reports
+
+  frontend:
+    image: ghcr.io/ddedomeni-j/certification-atlas-cisia/frontend:sha-71bb49c150317d16c689b0c38c74fd3e22ad3887
+    ports:
+      - "8501:8501"
+    environment:
+      BACKEND_API_URL: http://backend-metier-api:8001
+      RETRAINING_API_URL: http://retraining-api:8002
+      MLFLOW_URL: http://localhost:5000
+      GRAFANA_URL: http://localhost:3000
+    depends_on:
+      backend-metier-api:
+        condition: service_started
