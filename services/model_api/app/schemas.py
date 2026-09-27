@@ -12,7 +12,7 @@ class EmploymentApplication(BaseModel):
     est_allocataire: float = Field(..., ge=0, le=1)
     nationalite_hors_ue: int = Field(..., ge=0, le=1)
     departement: str = Field(..., min_length=2, max_length=3)
-    domaine_rome: str = Field(..., min_length=1, max_length=1)
+    code_rome_vise: str = Field(..., min_length=5, max_length=5)
     synthese_entretien: str = Field(..., min_length=1)
 
 

@@ -15,8 +15,8 @@ VALID_APPLICATION = {
     "niveau_diplome": "Bac+2",
     "est_allocataire": 1.0,
     "nationalite_hors_ue": 0,
-    "departement": "75",
-    "domaine_rome": "M",
+    "code_insee_commune": "75056",
+    "code_rome_vise": "M1805",
     "synthese_entretien": "Compétences à réactualiser.",
 }
 
@@ -36,7 +36,18 @@ def test_predict_returns_business_decision(monkeypatch, tmp_path):
         application: dict,
         request_id: str,
     ) -> dict:
-        assert application == VALID_APPLICATION
+        assert set(application) == {
+            "age",
+            "anciennete_poste_ans",
+            "niveau_diplome",
+            "est_allocataire",
+            "nationalite_hors_ue",
+            "departement",
+            "code_rome_vise",
+            "synthese_entretien",
+        }
+        assert application["code_rome_vise"] == "M1805"
+        assert application["departement"] == "75"
 
         return {
             "request_id": request_id,
@@ -71,3 +82,14 @@ def test_predict_rejects_invalid_application():
     response = client.post("/applications/predict", json=invalid_application)
 
     assert response.status_code == 422
+
+def test_metrics_exposes_http_metrics(monkeypatch, tmp_path):
+    monkeypatch.setattr(main, "BACKEND_DB_PATH", tmp_path / "backend_metier.db")
+
+    with TestClient(main.app) as client:
+        client.get("/health")
+        response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert "text/plain" in response.headers["content-type"]
+    assert "http_requests_total" in response.text

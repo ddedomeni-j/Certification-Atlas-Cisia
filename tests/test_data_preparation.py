@@ -8,7 +8,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "Scripts"))
 from data_preparation import (
     build_preprocessor,
     extract_departement,
-    extract_domaine_rome,
     prepare_features,
 )
 
@@ -18,11 +17,6 @@ def test_extract_departement_handles_standard_and_overseas_codes():
     assert extract_departement("2A004") == "2A"
     assert extract_departement("97100") == "971"
     assert extract_departement(None) == "INCONNU"
-
-
-def test_extract_domaine_rome():
-    assert extract_domaine_rome("M1805") == "M"
-    assert extract_domaine_rome(None) == "INCONNU"
 
 
 def test_prepare_features_creates_derived_columns_and_keeps_missing_text():
@@ -37,7 +31,6 @@ def test_prepare_features_creates_derived_columns_and_keeps_missing_text():
     result = prepare_features(dataframe)
 
     assert result.loc[0, "departement"] == "18"
-    assert result.loc[0, "domaine_rome"] == "M"
     assert result.loc[0, "synthese_entretien"] == "TEXTE_MANQUANT"
 
 

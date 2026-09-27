@@ -37,7 +37,7 @@ def test_reloaded_s5_model_predicts_from_raw_features():
                 "est_allocataire": 1.0,
                 "nationalite_hors_ue": 0,
                 "departement": "75",
-                "domaine_rome": "M",
+                "code_rome_vise": "M1805",
                 "synthese_entretien": (
                     "Compétences à réactualiser sur les outils numériques."
                 ),

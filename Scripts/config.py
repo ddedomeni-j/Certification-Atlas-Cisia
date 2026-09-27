@@ -1,11 +1,25 @@
 from pathlib import Path
+import json
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-DATA_DIR = PROJECT_ROOT / "Data"
 MODELS_DIR = PROJECT_ROOT / "Models"
+DATA_DIR = PROJECT_ROOT / "Data"
 TRAINING_DATA_PATH = DATA_DIR / "training_set.csv"
 REFERENCE_SET_PATH = DATA_DIR / "reference_set.csv"
+
+ACTIVE_MODEL_PATH = MODELS_DIR / "active_model.json"
+
+def load_active_model_version() -> str:
+    data = json.loads(ACTIVE_MODEL_PATH.read_text(encoding="utf-8"))
+    version = data.get("active_version")
+
+    if not isinstance(version, str) or not version:
+        raise ValueError("active_model.json doit contenir active_version.")
+
+    return version
+
+MODEL_VERSION = load_active_model_version()
 
 DATASET_NAME = (
     "dataset_trajectoire_emploi_Sujet Examen CISIA - "
@@ -25,12 +39,11 @@ CATEGORICAL_FEATURES = [
     "est_allocataire",
     "nationalite_hors_ue",
     "departement",
-    "domaine_rome",
+    "code_rome_vise",
     "synthese_entretien",
 ]
 
 MODEL_NAME = "S5_LightGBM"
-MODEL_VERSION = "v1"
 MODEL_SCENARIO = "S5"
 RANDOM_STATE = 42
 
@@ -52,7 +65,7 @@ MIN_F1_MACRO = 0.65
 F1_MIN_GAIN = 0.005
 CRITICAL_ERROR_RATE_TOLERANCE = 0.01
 
-MLFLOW_TRACKING_URI = f"sqlite:///{PROJECT_ROOT / 'mlflow.db'}"
+MLFLOW_TRACKING_URI = "http://127.0.0.1:5000"
 MLFLOW_EXPERIMENT_NAME = "atlas-cisia-s5"
 
 BACKEND_DB_PATH = DATA_DIR / "backend_metier.db"

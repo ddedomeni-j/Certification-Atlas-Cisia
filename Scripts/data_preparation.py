@@ -8,6 +8,8 @@ from sklearn.impute import SimpleImputer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+import numpy as np
+
 from config import TARGET_COLUMN, NUMERIC_FEATURES, CATEGORICAL_FEATURES
 
 def extract_departement(code_insee: object) -> str:
@@ -28,30 +30,24 @@ def extract_departement(code_insee: object) -> str:
     return code[:2] if len(code) >= 2 else "INCONNU"
 
 
-def extract_domaine_rome(code_rome: object) -> str:
-    if pd.isna(code_rome):
-        return "INCONNU"
-
-    code = str(code_rome).strip().upper()
-    return code[0] if code else "INCONNU"
-
-
 def prepare_features(dataframe: pd.DataFrame) -> pd.DataFrame:
     dataframe = dataframe.copy()
 
     dataframe["departement"] = dataframe["code_insee_commune"].map(
         extract_departement
     )
-    dataframe["domaine_rome"] = dataframe["code_rome_vise"].map(
-        extract_domaine_rome
-    )
-    dataframe["synthese_entretien"] = (
-        dataframe["synthese_entretien"]
-        .fillna("")
-        .astype(str)
-        .str.strip()
-        .replace("", "TEXTE_MANQUANT")
-    )
+
+    dataframe["synthese_entretien"] = (dataframe["synthese_entretien"]
+                                            .fillna("")
+                                            .astype(str)
+                                            .str.strip()
+                                            .replace("", "TEXTE_MANQUANT"))
+
+    feature_columns = NUMERIC_FEATURES + CATEGORICAL_FEATURES
+
+    for column in feature_columns:
+        dataframe[column] = dataframe[column].astype(object)
+        dataframe.loc[dataframe[column].isna(), column] = np.nan
 
     return dataframe
 

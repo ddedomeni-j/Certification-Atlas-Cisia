@@ -13,6 +13,10 @@ from fastapi.testclient import TestClient
 
 from services.model_api.app.main import app
 
+sys.path.insert(0, str(PROJECT_ROOT / "Scripts"))
+
+from config import MODEL_VERSION
+
 VALID_APPLICATION = {
     "age": 35,
     "anciennete_poste_ans": 2.5,
@@ -20,7 +24,7 @@ VALID_APPLICATION = {
     "est_allocataire": 1.0,
     "nationalite_hors_ue": 0,
     "departement": "75",
-    "domaine_rome": "M",
+    "code_rome_vise": "M1805",
     "synthese_entretien": (
         "Compétences à réactualiser sur les outils numériques."
     ),
@@ -44,7 +48,7 @@ def test_info_returns_active_s5_model_metadata():
 
     data = response.json()
     assert data["model_name"] == "S5_LightGBM"
-    assert data["model_version"] == "v1"
+    assert data["model_version"] == MODEL_VERSION
     assert data["scenario"] == "S5"
     assert len(data["feature_columns"]) == 8
 
@@ -65,7 +69,7 @@ def test_predict_returns_class_probabilities_and_request_id():
     assert data["prediction"] in {0, 1, 2}
     assert set(data["probabilities"]) == {"0", "1", "2"}
     assert sum(data["probabilities"].values()) == pytest.approx(1.0, abs=0.001)
-    assert data["model_version"] == "v1"
+    assert data["model_version"] == MODEL_VERSION
     assert data["request_id"] == request_id
     assert response.headers["X-Request-ID"] == request_id
 
@@ -77,3 +81,22 @@ def test_predict_rejects_invalid_schema():
         response = client.post("/predict", json=invalid_application)
 
     assert response.status_code == 422
+
+def test_metrics_exposes_http_metrics():
+    with TestClient(app) as client:
+        client.get("/health")
+        response = client.get("/metrics")
+
+    assert response.status_code == 200
+    assert "text/plain" in response.headers["content-type"]
+    assert "http_requests_total" in response.text
+
+
+def test_predict_increments_prediction_metric():
+    with TestClient(app) as client:
+        prediction_response = client.post("/predict", json=VALID_APPLICATION)
+        metrics_response = client.get("/metrics")
+
+    assert prediction_response.status_code == 200
+    assert metrics_response.status_code == 200
+    assert "model_predictions_total" in metrics_response.text
