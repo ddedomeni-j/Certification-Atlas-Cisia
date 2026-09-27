@@ -1,0 +1,128 @@
+services:
+  model-api:
+    build:
+      context: .
+      dockerfile: services/model_api/Dockerfile
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  backend-metier-api:
+    build:
+      context: .
+      dockerfile: services/backend_metier_api/Dockerfile
+    ports:
+      - "8001:8001"
+    environment:
+      MODEL_API_URL: http://model-api:8000
+    volumes:
+      - ./Data:/app/Data
+    depends_on:
+      model-api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health')",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  retraining-api:
+    build:
+      context: .
+      dockerfile: services/retraining_api/Dockerfile
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./Data:/app/Data
+      - ./Models:/app/Models
+      - ./Reports:/app/Reports
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8002/health')",
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "8501:8501"
+    environment:
+      BACKEND_API_URL: http://backend-metier-api:8001
+      MLFLOW_URL: http://localhost:5000
+      GRAFANA_URL: http://localhost:3000
+      RETRAINING_API_URL: http://retraining-api:8002
+    depends_on:
+      backend-metier-api:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - model-api
+      - backend-metier-api
+      - retraining-api
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: services/model_api/Dockerfile
+    command:
+      [
+        "python",
+        "-m",
+        "mlflow",
+        "server",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "5000",
+        "--backend-store-uri",
+        "sqlite:////app/Data/mlflow.db",
+        "--default-artifact-root",
+        "/app/Data/mlartifacts",
+      ]
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./Data:/app/Data
