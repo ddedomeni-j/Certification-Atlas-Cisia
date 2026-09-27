@@ -1,0 +1,152 @@
+{
+  "uid": "atlas-cisia-prod", "title": "Atlas CISIA Prod", "schemaVersion": 39,
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Latence p95 - API modèle",
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{
+        "datasource": {"type": "prometheus", "uid": "prometheus"},
+        "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"model-api\"}[5m])) by (le))",
+        "legendFormat": "p95"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "decimals": 3
+        }
+      }
+    },
+
+    {
+      "type": "stat",
+      "title": "API modèle",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "expr": "up{job=\"model-api\"}",
+        "legendFormat": "API modèle"
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{
+            "type": "value",
+            "options": {
+              "0": { "text": "INDISPONIBLE", "color": "red" },
+              "1": { "text": "OPÉRATIONNELLE", "color": "green" }
+            }
+          }]
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value_and_name"
+      }
+    },
+
+    {
+      "type": "stat",
+      "title": "API métier",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+                    "expr": "up{job=\"backend-metier-api\"}",
+                    "legendFormat": "API métier"
+                  }],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{
+            "type": "value",
+            "options": {
+              "0": { "text": "INDISPONIBLE", "color": "red" },
+              "1": { "text": "OPÉRATIONNELLE", "color": "green" }
+            }
+          }]
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value_and_name"
+      }
+    },
+
+    {
+      "type": "stat",
+      "title": "API de réentraînement",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        {
+          "expr": "up{job=\"retraining-api\"}",
+          "legendFormat": "API de réentraînement"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "0": { "text": "INDISPONIBLE", "color": "red" },
+                "1": { "text": "OPÉRATIONNELLE", "color": "green" }
+              }
+            }
+          ]
+        }
+      },
+      "options": {
+        "reduceOptions": { "calcs": ["lastNotNull"] },
+        "textMode": "value_and_name"
+      }
+    },
+
+    {
+      "type": "barchart",
+      "title": "Répartition des prédictions par classe",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [{
+        "expr": "sum(increase(model_predictions_total[15m])) by (predicted_class)",
+        "legendFormat": "classe {{predicted_class}}",
+        "instant": true
+      }],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0
+        }
+      },
+      "options": {
+        "orientation": "vertical",
+        "showValue": "always",
+        "stacking": "normal",
+        "xTickLabelRotation": 0
+      }
+    },
+
+    {
+      "type": "timeseries",
+      "title": "Erreurs de communication avec l'API modèle",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+                  {
+                    "expr": "sum(rate(http_requests_total{job=\"backend-metier-api\",status=\"502\"}[5m])) or vector(0)",
+                    "legendFormat": "502 - Erreur retournée par l'API modèle"
+                  },
+                  {
+                    "expr": "sum(rate(http_requests_total{job=\"backend-metier-api\",status=\"503\"}[5m])) or vector(0)",
+                    "legendFormat": "503 - API modèle indisponible"
+                  }
+                ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      }
+    }
+
+  ]
+}
+

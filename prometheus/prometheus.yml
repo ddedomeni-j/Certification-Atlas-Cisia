@@ -3,12 +3,17 @@ global:
   evaluation_interval: 5s
 
 scrape_configs:
-  - job_name: "model"
+  - job_name: "model-api"
     metrics_path: /metrics
     static_configs:
-      - targets: ["model:8000"]
+      - targets: ["model-api:8000"]
 
-  - job_name: "backend"
+  - job_name: "backend-metier-api"
     metrics_path: /metrics
     static_configs:
-      - targets: ["backend:8001"]
+      - targets: ["backend-metier-api:8001"]
+
+  - job_name: "retraining-api"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["retraining-api:8002"]
