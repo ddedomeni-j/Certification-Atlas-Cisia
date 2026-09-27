@@ -5,7 +5,8 @@ from dataclasses import dataclass
 
 import json
 
-from config import REPORTS_DIR, MIN_F1_MACRO, F1_MIN_GAIN, CRITICAL_ERROR_RATE_TOLERANCE
+from config import REPORTS_DIR, MIN_F1_MACRO, F1_MIN_GAIN
+from config import CRITICAL_ERROR_RATE_TOLERANCE
 
 @dataclass(frozen=True)
 class PromotionDecision:
@@ -65,10 +66,8 @@ def main() -> None:
     report_path = REPORTS_DIR / "candidate_evaluation.json"
     report = json.loads(report_path.read_text(encoding="utf-8"))
 
-    decision = decide_promotion(
-        candidate=report["candidate"]["metrics"],
-        production=report["production"]["metrics"],
-    )
+    decision = decide_promotion(candidate=report["candidate"]["metrics"],
+                                production=report["production"]["metrics"])
 
     decision_path = REPORTS_DIR / "promotion_decision.json"
     decision_path.write_text(

@@ -7,6 +7,7 @@ import requests
 import streamlit as st
 
 BACKEND_URL = os.getenv("BACKEND_API_URL", "http://127.0.0.1:8001")
+RETRAINING_API_URL=os.getenv("RETRAINING_API_URL", "http://127.0.0.1:8002")
 MLFLOW_URL = os.getenv("MLFLOW_URL", "http://127.0.0.1:5000")
 GRAFANA_URL = os.getenv("GRAFANA_URL", "http://127.0.0.1:3000")
 
@@ -248,6 +249,46 @@ def feedback_page() -> None:
                 f"le {created_at.strftime('%d/%m/%Y à %H:%M')}."
             )
 
+def administration_ml_page() -> None:
+    st.title("Administration ML")
+    st.caption("Espace réservé à l'équipe MLOps / model_admin.")
+
+    st.warning(
+        "Cette action prépare un nouveau candidat à partir des feedbacks non utilisés, "
+        "l'évalue contre le modèle actif et produit une recommandation. "
+        "Elle ne promeut jamais automatiquement un modèle."
+    )
+
+    if st.button("Lancer le réentraînement", type="primary"):
+        try:
+            with st.spinner("Réentraînement, évaluation et recommandation en cours..."):
+                response = requests.post(
+                    f"{RETRAINING_API_URL}/retraining",
+                    timeout=300,
+                )
+        except requests.RequestException:
+            st.error(
+                "Le service de réentraînement est indisponible. "
+                "Vérifiez le service Docker sur le port 8002."
+            )
+            return
+
+        if response.status_code == 422:
+            st.info(response.json().get("detail", "Aucun feedback disponible."))
+            return
+
+        if not response.ok:
+            st.error(f"Erreur API ({response.status_code}) : {response.text}")
+            return
+
+        result = response.json()
+        st.success(
+            f"{result['feedback_count']} feedback(s) ont été intégrés au candidat "
+            f"{result['candidate_version']}."
+        )
+        st.write(f"Recommandation : {result['recommendation']}")
+        st.link_button("Consulter MLflow", MLFLOW_URL)
+
 def monitoring_page() -> None:
     st.title("Suivi technique")
     st.write(
@@ -276,7 +317,7 @@ def monitoring_page() -> None:
 
 page = st.sidebar.radio(
     "Navigation",
-    ["Accueil", "Prédiction", "Feedback", "Suivi technique"],
+    ["Accueil", "Prédiction", "Feedback", "Suivi technique", "Administration ML"],
 )
 
 
@@ -286,5 +327,7 @@ elif page == "Prédiction":
     prediction_page()
 elif page == "Feedback":
     feedback_page()
-else:
+elif page == "Suivi technique":
     monitoring_page()
+else:
+    administration_ml_page()

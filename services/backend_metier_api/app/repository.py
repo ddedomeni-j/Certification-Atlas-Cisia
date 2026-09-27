@@ -167,3 +167,58 @@ def list_predictions(
         ).fetchall()
 
     return [dict(row) for row in rows]
+
+def list_feedbacks_for_training(database_path: Path) -> list[dict[str, Any]]:
+    """Retourne les feedbacks non utilisés avec le dossier initial associé."""
+    with _connect(database_path) as connection:
+        rows = connection.execute(
+            """
+            SELECT
+                feedbacks.id AS feedback_id,
+                feedbacks.request_id,
+                feedbacks.corrected_class,
+                feedbacks.comment,
+                feedbacks.created_at AS feedback_created_at,
+                predictions.input_data_json,
+                predictions.model_version AS predicted_with_version
+            FROM feedbacks
+            INNER JOIN predictions
+                ON predictions.request_id = feedbacks.request_id
+            WHERE feedbacks.used_for_training = 0
+            ORDER BY feedbacks.created_at ASC
+            """
+        ).fetchall()
+
+    return [
+        {
+            "feedback_id": row["feedback_id"],
+            "request_id": row["request_id"],
+            "input_data": json.loads(row["input_data_json"]),
+            "corrected_class": row["corrected_class"],
+            "comment": row["comment"],
+            "feedback_created_at": row["feedback_created_at"],
+            "predicted_with_version": row["predicted_with_version"],
+        }
+        for row in rows
+    ]
+
+
+def mark_feedbacks_as_used_for_training(
+    database_path: Path,
+    feedback_ids: list[int],
+) -> None:
+    """Marque les feedbacks intégrés avec succès dans un entraînement candidat."""
+    if not feedback_ids:
+        return
+
+    placeholders = ", ".join("?" for _ in feedback_ids)
+
+    with _connect(database_path) as connection:
+        connection.execute(
+            f"""
+            UPDATE feedbacks
+            SET used_for_training = 1
+            WHERE id IN ({placeholders})
+            """,
+            feedback_ids,
+        )
