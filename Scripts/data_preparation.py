@@ -46,6 +46,9 @@ def prepare_features(dataframe: pd.DataFrame) -> pd.DataFrame:
     feature_columns = NUMERIC_FEATURES + CATEGORICAL_FEATURES
 
     for column in feature_columns:
+        if column not in dataframe.columns:
+            continue
+
         dataframe[column] = dataframe[column].astype(object)
         dataframe.loc[dataframe[column].isna(), column] = np.nan
 
