@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import os
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
@@ -65,7 +66,7 @@ MIN_F1_MACRO = 0.65
 F1_MIN_GAIN = 0.005
 CRITICAL_ERROR_RATE_TOLERANCE = 0.01
 
-MLFLOW_TRACKING_URI = "http://127.0.0.1:5000"
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://127.0.0.1:5000")
 MLFLOW_EXPERIMENT_NAME = "atlas-cisia-s5"
 
 BACKEND_DB_PATH = DATA_DIR / "backend_metier.db"

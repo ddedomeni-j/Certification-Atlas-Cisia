@@ -30,14 +30,14 @@ async def retraining() -> RetrainingResponse:
     except ValueError as error:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                             detail=str(error)) from error
-    except Exception as error:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail=f"Échec du réentraînement : {type(error).__name__}") from error
-    # Afficher le message pour debug
     # except Exception as error:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-    #         detail=f"Échec du réentraînement : {error}",
-    #     ) from error
+    #     raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    #                         detail=f"Échec du réentraînement : {type(error).__name__}") from error
+    # Afficher le message pour debug
+    except Exception as error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Échec du réentraînement : {error}",
+        ) from error
 
     return RetrainingResponse(**result)

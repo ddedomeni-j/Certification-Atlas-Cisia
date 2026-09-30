@@ -46,6 +46,11 @@ services:
     build:
       context: .
       dockerfile: services/retraining_api/Dockerfile
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    depends_on:
+      mlflow:
+        condition: service_started
     ports:
       - "8002:8002"
     volumes:
@@ -117,6 +122,8 @@ services:
         "0.0.0.0",
         "--port",
         "5000",
+        "--allowed-hosts",
+        "mlflow:5000,localhost:5000,127.0.0.1:5000",
         "--backend-store-uri",
         "sqlite:////app/Data/mlflow.db",
         "--default-artifact-root",

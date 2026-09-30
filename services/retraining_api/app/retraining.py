@@ -90,6 +90,8 @@ def run_retraining() -> dict[str, str | int]:
     # Évaluer le candidat face au modèle actif.
     run_script("evaluate_candidate.py")
 
+    run_script("register_mlflow.py")
+
     # Générer une recommandation, sans promotion automatique.
     run_script("promotion.py")
 
