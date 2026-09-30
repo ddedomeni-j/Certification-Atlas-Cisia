@@ -34,6 +34,7 @@ def test_save_and_get_prediction(tmp_path):
                     prediction=1,
                     probabilities={0: 0.2, 1: 0.6, 2: 0.2},
                     decision="Retour à l'emploi intermédiaire",
+                    review_status="none",
                     model_version="v1",
                     created_at=created_at)
 
@@ -44,6 +45,7 @@ def test_save_and_get_prediction(tmp_path):
     assert prediction["prediction"] == 1
     assert prediction["input_data"]["age"] == 35
     assert prediction["model_version"] == "v1"
+    assert prediction["review_status"] == "none"
 
     # Les clés d'un dictionnaire deviennent des chaînes après JSON.
     assert prediction["probabilities"] == {
@@ -70,6 +72,7 @@ def test_save_feedback_links_to_existing_prediction(tmp_path):
                     prediction=2,
                     probabilities={0: 0.1, 1: 0.2, 2: 0.7},
                     decision="Risque de chômage de longue durée",
+                    review_status="none",
                     model_version="v1",
                     created_at=datetime.now(timezone.utc))
 
@@ -106,6 +109,7 @@ def test_lists_and_marks_feedbacks_for_training(tmp_path):
                     prediction=0,
                     probabilities={0: 0.7, 1: 0.2, 2: 0.1},
                     decision="Retour rapide à l'emploi",
+                    review_status="none",
                     model_version="v3",
                     created_at=datetime.now(timezone.utc))
 

@@ -49,6 +49,12 @@ DECISION_LABELS = {
     2: "Risque de chômage de longue durée",
 }
 
+def probability_for_class(
+    probabilities: dict[str | int, float],
+    class_label: int,
+) -> float:
+    return float(probabilities.get(str(class_label), probabilities.get(class_label, 0.0)))
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Initialise la base SQLite au démarrage du backend métier."""
@@ -93,21 +99,40 @@ async def predict_application(
             detail="Classe invalide retournée par le service de prédiction.")
 
     created_at = datetime.now(timezone.utc)
+
     decision = DECISION_LABELS[prediction]
+
+    # Review status : ne se prononce pas 
+    probabilities = model_response["probabilities"]
+    if not probabilities:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY,
+                            detail="Probabilités absentes du service de prédiction.")
+
+    class_zero_probability = probability_for_class(probabilities, 0)
+    max_probability = max(float(value) for value in probabilities.values())
+
+    if max_probability < 0.60:
+        review_status = "abstention"
+    elif prediction == 0 and class_zero_probability < 0.80:
+        review_status = "reinforced_review"
+    else:
+        review_status = "none"
 
     save_prediction(BACKEND_DB_PATH,
                     request_id=model_response["request_id"],
                     input_data=raw_data,
                     prediction=prediction,
-                    probabilities=model_response["probabilities"],
+                    probabilities=probabilities,
                     decision=decision,
+                    review_status=review_status,
                     model_version=model_response["model_version"],
                     created_at=created_at)
 
     return PredictionResult(request_id=model_response["request_id"],
                             prediction=prediction,
                             decision=decision,
-                            probabilities=model_response["probabilities"],
+                            review_status=review_status,
+                            probabilities=probabilities,
                             model_version=model_response["model_version"],
                             created_at=created_at)
 
@@ -122,6 +147,7 @@ async def get_applications() -> list[PredictionSummary]:
                               created_at=prediction["created_at"],
                               prediction=prediction["prediction"],
                               decision=prediction["decision"],
+                              review_status=prediction["review_status"],
                               model_version=prediction["model_version"])
             for prediction in predictions]
 
@@ -138,6 +164,7 @@ async def get_application_prediction(request_id: str) -> PredictionResult:
     return PredictionResult(request_id=prediction["request_id"],
                             prediction=prediction["prediction"],
                             decision=prediction["decision"],
+                            review_status=prediction["review_status"],
                             probabilities=prediction["probabilities"],
                             model_version=prediction["model_version"],
                             created_at=prediction["created_at"])

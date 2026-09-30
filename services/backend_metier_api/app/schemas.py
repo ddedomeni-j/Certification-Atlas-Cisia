@@ -23,6 +23,7 @@ class PredictionResult(BaseModel):
     request_id: str
     prediction: int = Field(..., ge=0, le=2)
     decision: str
+    review_status: str
     probabilities: dict[int, float]
     model_version: str
     created_at: datetime
@@ -52,4 +53,5 @@ class PredictionSummary(BaseModel):
     created_at: datetime
     prediction: int = Field(..., ge=0, le=2)
     decision: str
+    review_status: str
     model_version: str

@@ -55,11 +55,21 @@ def show_prediction(result: dict) -> None:
     """Affiche une prédiction métier et ses probabilités."""
     prediction = result["prediction"]
     color = DECISION_COLORS[prediction]
-
+    review_status = result["review_status"]
+    
     st.subheader("Résultat de la prédiction")
-    st.markdown(
-        f":{color}[**{result['decision']}**]"
-    )
+    st.markdown(f":{color}[**{result['decision']}**]")
+
+    st.info("Cette estimation est une aide à la décision. Vérifiez les freins "
+            "périphériques, le parcours professionnel et les éléments de l'entretien "
+            "avant toute orientation.")
+    
+    if review_status == "abstention":
+        st.error("Analyse complémentaire requise : les probabilités sont insuffisantes "
+                 "pour formuler une recommandation fiable.")
+    elif review_status == "reinforced_review":
+        st.warning("Decision à confirmer par un conseiller : "
+                   "la confiance du modèle est intermédiaire.")
 
     first, second, third = st.columns(3)
     first.metric("Classe prédite", prediction)
@@ -78,37 +88,52 @@ def show_prediction(result: dict) -> None:
 
 
 def home_page() -> None:
-    st.title("Atlas CISIA")
-    st.subheader("Aide à la décision pour le retour à l'emploi")
+    st.title("Certification Atlas CISIA")
+    st.caption("Aide à la décision pour l'accompagnement vers le retour à l'emploi")
+    
+    st.subheader("Modèle utilisé")
+    st.write("Le système utilise le scénario S5 avec le modèle LightGBM. "
+             "Il exploite les données tabulaires et la synthèse d'entretien comme une variable catégorielle.")
+    
+    st.info("La prédiction est une aide à l'analyse. "
+            "Le conseiller conserve la décision finale et peut l'enrichir par un feedback.")
 
-    st.write(
-        "Cette application est l'API client d'un système d'IA "
-        "d'aide à la décision utilisant un modèle de prédiction du délai de retour à l'emploi "
-        "de personnes à partir des informations du dossier et de la synthèse d'entretien."
-    )
+    prediction, feedback, monitoring, administration = st.columns(4)
 
-    st.markdown(
-        """
-        **Chaîne de traitement**
+    with prediction:
+        st.subheader("1. Évaluer")
+        st.markdown("### 📋")
+        st.write("Saisissez le dossier et la synthèse d'entretien pour obtenir "
+                 "une estimation du délai de retour à l'emploi.")
+        st.markdown("- Classe et probabilités\n"
+                    "- Recommandation métier\n"
+                    "- Version du modèle")
 
-        1. Le premier onglet permet au conseiller :
-            - de saisir les éléments du dossier de la personne faisant l'objet de l'évaluation.
-            - d'appeler le service de prédiction pour obtenir une aide à la décision qui peut être
-                - une prédiction de délai de retour à l'emploi
-                - une indication de personne protégée nécessitant une validation humaine
-                - une impossibilité à prédire un résultat
-            - Les seuils chosis pour la décision sont ...
-        2. Le deuxieme onglet permet au conseiller de saisir un feedback
-            - en retrouvant la personne évaluée grace à son identifiant
-            - en éditant et en corrigeant la décision en fonction de sa réalisation
-        3. Le troisième onglet permet d'accéder aux tableaux de suivi Grafana et MlFlow
+    with feedback:
+        st.subheader("2. Rechercher & corriger")
+        st.markdown("### 🔎")
+        st.write("Retrouvez une prédiction journalisée ; enregistrez "
+                 "une correction lorsque la situation réelle est connue.")
+        st.markdown("- Historique\n"
+                    "- Classe corrigée\n"
+                    "- Commentaire conseiller")
 
-        Remarques : 
-        - Le scénario retenu pour le modèle est S5 LightGBM (toutes les variables utilisées et le texte utilisé comme variable catégorielle)
-        - La prédiction est journalisée avec la version du modèle utilisée.
-        - Les feedbacks alimentent la boucle de réentraînement et de promotion d'un nouveau modèle.
-        """
-    )
+    with monitoring:
+        st.subheader("3. Superviser")
+        st.markdown("### 📈")
+        st.write("Consultez l'état des services et le suivi des expérimentations.")
+        st.markdown("- Grafana : disponibilité, erreurs et latence\n"
+                    "- MLflow : métriques des modèles réentrainés")
+
+    with administration:
+        st.subheader("4. Améliorer")
+        st.markdown("### 🔄⚙️")
+        st.write("Espace réservé à l'équipe MLOps pour préparer un modèle candidat en utilisant "
+                 "les feedbacks des conseillers. La promotion des modèles candidats nécessite une validation humaine.")
+
+        st.markdown("- Réentraînement contrôlé\n"
+                    "- Évaluation sur référence\n"
+                    "- Validation humaine avant promotion")
 
 
 def prediction_page() -> None:
@@ -199,6 +224,7 @@ def feedback_page() -> None:
     labels = {
         item["request_id"]: (
             f"{item['request_id'][:8]} | {item['decision']} | "
+            f"revue : {item['review_status']} | "
             f"{item['created_at'][:19]}"
         )
         for item in applications
@@ -250,7 +276,7 @@ def feedback_page() -> None:
             )
 
 def administration_ml_page() -> None:
-    st.title("Administration ML")
+    st.title("Boucle d'amélioration MLOps")
     st.caption("Espace réservé à l'équipe MLOps / model_admin.")
 
     st.warning(
@@ -317,17 +343,22 @@ def monitoring_page() -> None:
 
 page = st.sidebar.radio(
     "Navigation",
-    ["Accueil", "Prédiction", "Feedback", "Suivi technique", "Administration ML"],
+    [
+        "Accueil",
+        "1. Évaluer un dossier",
+        "2. Rechercher et corriger",
+        "3. Superviser",
+        "4. Boucle d'amélioration MLOps",
+    ],
 )
-
 
 if page == "Accueil":
     home_page()
-elif page == "Prédiction":
+elif page == "1. Évaluer un dossier":
     prediction_page()
-elif page == "Feedback":
+elif page == "2. Rechercher et corriger":
     feedback_page()
-elif page == "Suivi technique":
+elif page == "3. Superviser":
     monitoring_page()
 else:
     administration_ml_page()

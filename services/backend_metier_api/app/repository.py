@@ -32,6 +32,7 @@ def init_database(database_path: Path) -> None:
                 prediction INTEGER NOT NULL,
                 probabilities_json TEXT NOT NULL,
                 decision TEXT NOT NULL,
+                review_status TEXT NOT NULL,
                 model_version TEXT NOT NULL
             );
 
@@ -57,6 +58,7 @@ def save_prediction(
     probabilities: dict[str | int, float],
     decision: str,
     model_version: str,
+    review_status: str,
     created_at: datetime,
 ) -> None:
     """Enregistre une inférence et les données métier associées."""
@@ -70,9 +72,10 @@ def save_prediction(
                 prediction,
                 probabilities_json,
                 decision,
+                review_status,
                 model_version
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 request_id,
@@ -81,6 +84,7 @@ def save_prediction(
                 prediction,
                 json.dumps(probabilities),
                 decision,
+                review_status,
                 model_version,
             ),
         )
@@ -107,6 +111,7 @@ def get_prediction(
         "prediction": row["prediction"],
         "probabilities": json.loads(row["probabilities_json"]),
         "decision": row["decision"],
+        "review_status": row["review_status"],
         "model_version": row["model_version"],
     }
 
@@ -158,7 +163,13 @@ def list_predictions(
     with _connect(database_path) as connection:
         rows = connection.execute(
             """
-            SELECT request_id, created_at, prediction, decision, model_version
+            SELECT
+                request_id,
+                created_at,
+                prediction,
+                decision,
+                review_status,
+                model_version
             FROM predictions
             ORDER BY created_at DESC
             LIMIT ?
