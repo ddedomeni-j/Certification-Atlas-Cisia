@@ -121,6 +121,7 @@ def test_run_retraining_marks_feedbacks_only_after_success(
             ),
         ),
         ("evaluate_candidate.py", ()),
+        ("register_mlflow.py", ()),
         ("promotion.py", ()),
     ]
     assert marked_feedback_ids == [12]
