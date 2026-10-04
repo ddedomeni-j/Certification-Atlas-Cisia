@@ -187,27 +187,95 @@ def prediction_page() -> None:
 
         synthese = st.selectbox("Synthèse d'entretien", options=SYNTHESIS_OPTIONS)
         
+        # submitted = st.form_submit_button("Lancer la prédiction")
+        # if submitted:
+        #     payload = {"age": age,
+        #             "anciennete_poste_ans": anciennete,
+        #             "niveau_diplome": niveau_diplome,
+        #             "est_allocataire": est_allocataire,
+        #             "nationalite_hors_ue": nationalite_hors_ue,
+        #             "code_insee_commune": code_insee_commune.strip().upper(),
+        #             "code_rome_vise": code_rome_vise.strip().upper(),
+        #             "synthese_entretien": synthese}
+
+        #     with st.spinner("Évaluation du dossier..."):
+        #         response = call_backend("POST",
+        #                                 "/applications/predict",
+        #                                 json=payload)
+
+        #     if response is not None:
+        #         result = response.json()
+        #         st.session_state["last_prediction"] = result
+        #         show_prediction(result)
         submitted = st.form_submit_button("Lancer la prédiction")
         if submitted:
-            payload = {"age": age,
-                    "anciennete_poste_ans": anciennete,
-                    "niveau_diplome": niveau_diplome,
-                    "est_allocataire": est_allocataire,
-                    "nationalite_hors_ue": nationalite_hors_ue,
-                    "code_insee_commune": code_insee_commune.strip().upper(),
-                    "code_rome_vise": code_rome_vise.strip().upper(),
-                    "synthese_entretien": synthese}
+            payload = {
+                "age": age,
+                "anciennete_poste_ans": anciennete,
+                "niveau_diplome": niveau_diplome,
+                "est_allocataire": est_allocataire,
+                "nationalite_hors_ue": nationalite_hors_ue,
+                "code_insee_commune": code_insee_commune.strip().upper(),
+                "code_rome_vise": code_rome_vise.strip().upper(),
+                "synthese_entretien": synthese,
+            }
 
             with st.spinner("Évaluation du dossier..."):
-                response = call_backend("POST",
-                                        "/applications/predict",
-                                        json=payload)
+                response = call_backend(
+                    "POST",
+                    "/applications/predict",
+                    json=payload,
+                )
 
             if response is not None:
-                result = response.json()
-                st.session_state["last_prediction"] = result
-                show_prediction(result)
+                st.session_state["last_prediction"] = response.json()
 
+    # Affichage du résultat et du formulaire de validation humaine
+    if "last_prediction" in st.session_state:
+        result = st.session_state["last_prediction"]
+        show_prediction(result)
+
+        st.markdown("---")
+        st.subheader("✍️ Validation formelle de l'orientation (AI Act Art. 14 & RGPD Art. 22)")
+        st.caption(
+            "Le système d'IA n'émet qu'une recommandation consultative. "
+            "Le conseiller valide et signe formellement l'orientation retenue pour l'usager."
+        )
+
+        with st.form("decision_conseiller_form"):
+            decision_classe = st.selectbox(
+                "Orientation actée par le conseiller :",
+                options=[0, 1, 2],
+                index=int(result["prediction"]),
+                format_func=lambda value: {
+                    0: "Classe 0 : Retour rapide (< 6 mois) — Autonomie",
+                    1: "Classe 1 : Retour intermédiaire (6–12 mois) — Accompagnement guidé",
+                    2: "Classe 2 : Risque de chômage longue durée (> 12 mois) — Accompagnement renforcé",
+                }[value],
+            )
+
+            commentaire = st.text_area(
+                "Motivation de la décision / Freins identifiés :",
+                placeholder="Ex. : Orientation conforme à la recommandation ou motivation d'une réorientation...",
+                max_chars=1000,
+            )
+
+            valider = st.form_submit_button("Signer et acter l'orientation")
+
+            if valider:
+                feedback_resp = call_backend(
+                    "POST",
+                    "/feedback",
+                    json={
+                        "request_id": result["request_id"],
+                        "corrected_class": decision_classe,
+                        "comment": commentaire or "Orientation validée conforme à la recommandation",
+                    },
+                )
+                if feedback_resp is not None:
+                    st.success(
+                        "Orientation formellement actée et consignée dans le journal d'audit !"
+                    )
 
 def feedback_page() -> None:
     st.title("Feedback conseiller")
